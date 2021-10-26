@@ -14,9 +14,10 @@ import java.io.IOException;
 
 public class ConnectedCircles extends PApplet {
 
-int gridsize = 20;
+int gridsize = 10;
 int count = 0;
 Orb[] orbs;
+ArrayList<Vanishing_Line> lines = new ArrayList<Vanishing_Line>();
 public void setup() {
    orbs = new Orb[(gridsize - 1) * (gridsize - 1)];
    
@@ -39,9 +40,16 @@ public void draw() {
    background(255);
    for (int i = 0; i < count; i++) {
       orbs[i].move();
-      // orbs[i].display();
    }
    collision();
+   for (int i = lines.size() - 1; i >= 0; i--){
+      Vanishing_Line line = lines.get(i);
+      if (!line.finished) {
+         line.display();
+      } else {
+         lines.remove(i);
+      }
+   }
 }
 
 public void collision(){
@@ -50,8 +58,8 @@ public void collision(){
          float loc_dist = distance(orbs[i].xpos, orbs[i].ypos, orbs[j].xpos, orbs[j].ypos);
          float collision_dist = orbs[i].orbsize/2 + orbs[j].orbsize/2;
          if (loc_dist <= collision_dist){
-            stroke(0);
-            line(orbs[i].xpos, orbs[i].ypos, orbs[j].xpos, orbs[j].ypos);
+            Vanishing_Line line = new Vanishing_Line(orbs[i].xpos, orbs[i].ypos, orbs[j].xpos, orbs[j].ypos);
+            lines.add(line);
          }
       }
    }
@@ -63,9 +71,10 @@ class Orb {
    float y_speed;
    float xpos;
    float ypos;
+   float index;
    
    public Orb(float x, float y){
-      orbsize = random(1,3) * height/20;
+      orbsize = random(1,3) * height/prop(gridsize * 2);
       x_speed = prop(random(-1, 1));
       y_speed = prop(random(-1, 1));
       xpos = x;
@@ -90,6 +99,36 @@ class Orb {
    } 
 }
 
+class Vanishing_Line {
+   float x0;
+   float y0;
+   float x1; 
+   float y1;
+   float frames_alive;
+   float decay;
+   boolean finished = false;
+
+   public Vanishing_Line(float x0pos, float y0pos, float x1pos, float y1pos) {
+      x0 = x0pos;
+      y0 = y0pos;
+      x1 = x1pos;
+      y1 = y1pos;
+      frames_alive = 90;
+      decay = frames_alive;
+   }
+
+   public void display(){
+      if (decay >= 0){
+         float alpha = decay / frames_alive;
+         stroke(0, 0, 0, alpha * 255);
+         line(x0, y0, x1, y1);
+         decay -= 1;
+      } else {
+         finished = true;
+      }
+   }
+}
+
 public float prop(float value){
    return value * width / 512;
 }
@@ -98,7 +137,7 @@ public float distance(float x1, float y1, float x2, float y2){
    return (float)sqrt((y2 - y1) * (y2 - y1) + (x2 - x1) * (x2 - x1));
 }
 
-  public void settings() {  size(1080, 1080); }
+  public void settings() {  size(512, 512); }
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "ConnectedCircles" };
     if (passedArgs != null) {
